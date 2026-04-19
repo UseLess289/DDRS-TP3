@@ -1,0 +1,74 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs} % Pour des tableaux esthétiques
+\usepackage{float}
+
+\title{Rapport TP 3 DDRS : Performance énergétique et optimisation}
+\author{} % à modifier avec le nom du binôme si nécessaire
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    Ce document présente une étude analytique de l'impact énergétique lié à l'optimisation d'un code calculant l'ensemble de Mandelbrot. Plutôt qu'une simple suite chronologique de mesures, ce rapport regroupe et compare l'influence du langage utilisé, l'exploitation fine de l'architecture matérielle (vectorisation, multi-threading), et replace ces performances logicielles dans un contexte matériel et environnemental global.
+\end{abstract}
+
+\section{Introduction et Protocole Expérimental}
+% Présenter l'objectif global : rendre un code efficace énergétiquement.
+% Décrire l'environnement de test : ordinateur utilisé, processeur (nombre de cœurs physiques), type d'OS, outil de mesure (s-tui, Power Gadget) et méthodologie (récupération de la puissance active brute, déduction de la P_idle pour obtenir l'énergie nette).
+
+\section{Choix du Langage et Impact de la Compilation}
+% Cette section compare l'exécution logicielle interprétée brute face aux approches compilées.
+
+\subsection{L'interprété face au compilé (Python vs C++)}
+% Synthèse des Q1, Q2, Q4. 
+% Comparer les temps et l'énergie entre : Python de base, Python avec Numba (compilation JIT) et C++ de base (séquentiel/Ahead-of-Time).
+% Mettre l'accent sur le bond de performance énergétique brut apporté par la compilation. (Insérer ici un tableau ou un graphique des mesures).
+
+\subsection{Rentabilité énergétique de la compilation (AOT)}
+% Intégrer ici la Q9. 
+% La compilation C++ a un coût énergétique propre qu'il faut rentabiliser. À partir de combien d'images ce coût initial de compilation est-il "amorti" par rapport à un simple script exécuté via Numba ?
+
+\section{Exploitation de l'Architecture Matérielle (CPU)}
+% Analyse des optimisations qui descendent proche du silicium (SIMD, Pipeline, Coeurs).
+
+\subsection{Parallélisation Spatiale (Multi-cœur)}
+% Synthèse des Q3 et Q5.
+% Comparer le passage à l'échelle via le multi-threading (Numba parallel, C++ OpenMP).
+% La puissance instantanée (W) augmente drastiquement en sollicitant tous les cœurs, mais le temps de calcul chute considérablement : quel est le résultat réel sur l'énergie totale (J ou mWh) consommée per la tâche ?
+
+\subsection{Optimisations Mono-cœur : Vectorisation et Pipelining}
+% Synthèse des Q6, Q7 et Q8 (Bonus).
+% Au sein d'un seul cœur, analyser l'impact matériel du SIMD (AVX/FMA) et du travail à la chaîne (Pipelining en calculant 4 pixels à la fois).
+% Aborder le paradoxe de la question Bonus : Pourquoi réaliser en moyenne "plus" d'itérations par pixel (à cause des calculs simultanés inutiles de certains voisins dans un registre AVX) absorbe au final "moins" d'énergie ?
+
+\section{Bilan Global des Stratégies d'Optimisation}
+% Synthèse de la question 8 (Q8.a, Q8.b, Q8.c).
+% - Citer la meilleure version globale.
+% - Temps vs Énergie : Prouver ou infirmer que "plus rapide = plus économe en énergie" selon les relevés et le ratio P_idle / P_active.
+% - Est-il plus intéressant de blinder un seul cœur de manière ultra-optimisée (SIMD+Pipe) ou juste paralléliser bêtement un code sous-optimal aux 16 cœurs de son CPU ?
+
+\section{Impact Environnemental et Étude de Cas}
+
+\subsection{L'importance Géopolitique (Mix Électrique)}
+% Synthèse de la Q10.
+% Expliquer que le gCO2 / kWh varie dramatiquement. Que serait l'impact carbone des mêmes requêtes exécutées dans un pays au réseau très carboné par rapport à une exécution locale ? (Montrer une valeur estimée). 
+
+\subsection{Perspectives Logicielles et Cas d'Étude (ENSEIRB)}
+% Synthèse des Q11 et Q12.
+% Q11 : Présenter d'autres leviers d'optimisation (précision des flottants simple vs double, GPU vs CPU, limitation de fréquence, etc.).
+% Q12 : Mise en application finale. Choisir un outil / code numérique utilisé dans la formation (ex: réseau de de neurones, calcul éléments finis...), estimer / calculer son empreinte environnementale et proposer des pistes de remédiation architecturale ou algorithmique.
+
+\section*{Conclusion}
+% Synthèse finale sur l'importance de la sobriété numérique dans le développement applicatif et sur la pertinence d'aligner la conception logicielle sur les contraintes matérielles.
+
+\end{document}
