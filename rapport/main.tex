@@ -9,6 +9,7 @@
 \usepackage{hyperref}
 \usepackage{booktabs} % Pour des tableaux esthétiques
 \usepackage{float}
+\usepackage{amsmath}
 
 \title{Rapport TP 3 DDRS : Performance énergétique et optimisation}
 \author{} % à modifier avec le nom du binôme si nécessaire
@@ -22,54 +23,124 @@
 	Ce document présente une étude analytique de l'impact énergétique lié à l'optimisation d'un code calculant l'ensemble de Mandelbrot. Plutôt qu'une simple suite chronologique de mesures, ce rapport regroupe et compare l'influence du langage utilisé, l'exploitation fine de l'architecture matérielle (vectorisation, multi-threading), et replace ces performances logicielles dans un contexte matériel et environnemental global.
 \end{abstract}
 
-\section{Introduction et Protocole Expérimental}
-% Présenter l'objectif global : rendre un code efficace énergétiquement.
-% Décrire l'environnement de test : ordinateur utilisé, processeur (nombre de cœurs physiques), type d'OS, outil de mesure (s-tui, Power Gadget) et méthodologie (récupération de la puissance active brute, déduction de la P_idle pour obtenir l'énergie nette).
+\section{Introduction et protocole expérimental}
 
-\section{Choix du Langage et Impact de la Compilation}
-% Cette section compare l'exécution logicielle interprétée brute face aux approches compilées.
+L'objectif de ce travail est de rendre un programme de calcul de la fractale de Mandelbrot aussi efficace que possible sur le plan énergétique. Il s'agit d'étudier l'influence du langage de programmation et de l'exploitation de l'architecture matérielle (vectorisation, multi-threading CPU).
+
+Les mesures ont été prises lors de différentes expériences. Pour estimer l'énergie réellement consommée par notre tâche, on mesure la puissance active du processeur (avec des outils comme \texttt{s-tui} sur Linux ou \textit{Intel Power Gadget}). Ensuite, on enlève la puissance de repos liée au système d'exploitation ($P_{\text{idle}}$) pour isoler la consommation du programme. L'énergie nette absorbée se calcule donc avec la formule suivante :
+\[ E_{\text{nette}} = (P_{\text{active}} - P_{\text{idle}}) \times t \]
+Dans la suite, l'unité mWh donnée par les outils sera considérée comme équivalente à des joules (W.s).
+
+\section{Choix du langage et impact de la compilation}
 
 \subsection{L'interprété face au compilé (Python vs C++)}
-% Synthèse des Q1, Q2, Q4. 
-% Comparer les temps et l'énergie entre : Python de base, Python avec Numba (compilation JIT) et C++ de base (séquentiel/Ahead-of-Time).
-% Mettre l'accent sur le bond de performance énergétique brut apporté par la compilation. (Insérer ici un tableau ou un graphique des mesures).
 
-\subsection{Rentabilité énergétique de la compilation (AOT)}
-% Intégrer ici la Q9. 
-% La compilation C++ a un coût énergétique propre qu'il faut rentabiliser. À partir de combien d'images ce coût initial de compilation est-il "amorti" par rapport à un simple script exécuté via Numba ?
+Dans cette partie, on compare l'exécution du calcul d'une image de 2048x2048 pixels avec un script Python (faisant appel à de la compilation à la volée via Numba) et avec un code C++ séquentiel classique. 
+D'après nos mesures, la version Python met 58,4 secondes à s'exécuter, consommant autour de 34~W en moyenne (en comptant les 7~W du processus de repos). Cela représente une énergie dédiée d'environ 1576,8 J. De son côté, la version en C++ exécute la même tâche en 23,58~s avec une consommation de 26,5~W en charge, ne nécessitant au final que 448,1 J d'énergie.
 
-\section{Exploitation de l'Architecture Matérielle (CPU)}
-% Analyse des optimisations qui descendent proche du silicium (SIMD, Pipeline, Coeurs).
+Le simple fait de passer d'un langage (Python) à un autre mieux compilé (C++) divise par presque 3,5 la consommation d'énergie du programme, et cela sans même utiliser le multi-threading (voir figures \ref{fig:python_jit} et \ref{fig:cpp_seq}).
 
-\subsection{Parallélisation Spatiale (Multi-cœur)}
-% Synthèse des Q3 et Q5.
-% Comparer le passage à l'échelle via le multi-threading (Numba parallel, C++ OpenMP).
-% La puissance instantanée (W) augmente drastiquement en sollicitant tous les cœurs, mais le temps de calcul chute considérablement : quel est le résultat réel sur l'énergie totale (J ou mWh) consommée per la tâche ?
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../average_estimate6.png}
+        \caption{Consommation de la version Python JIT 2048px.}
+        \label{fig:python_jit}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{../average_estimate15.png}
+        \caption{Consommation de la version C++ séquentielle 2048px.}
+        \label{fig:cpp_seq}
+    \end{minipage}
+\end{figure}
 
-\subsection{Optimisations Mono-cœur : Vectorisation et Pipelining}
-% Synthèse des Q6, Q7 et Q8 (Bonus).
-% Au sein d'un seul cœur, analyser l'impact matériel du SIMD (AVX/FMA) et du travail à la chaîne (Pipelining en calculant 4 pixels à la fois).
-% Aborder le paradoxe de la question Bonus : Pourquoi réaliser en moyenne "plus" d'itérations par pixel (à cause des calculs simultanés inutiles de certains voisins dans un registre AVX) absorbe au final "moins" d'énergie ?
+\subsection{Rentabilité de la compilation}
 
-\section{Bilan Global des Stratégies d'Optimisation}
-% Synthèse de la question 8 (Q8.a, Q8.b, Q8.c).
-% - Citer la meilleure version globale.
-% - Temps vs Énergie : Prouver ou infirmer que "plus rapide = plus économe en énergie" selon les relevés et le ratio P_idle / P_active.
-% - Est-il plus intéressant de blinder un seul cœur de manière ultra-optimisée (SIMD+Pipe) ou juste paralléliser bêtement un code sous-optimal aux 16 cœurs de son CPU ?
+Compiler le code C++ demande un effort initial au processeur, ce qui consomme logiquement un peu d'énergie au départ. Avec le compilateur \texttt{clang++ -O3}, cette compilation prend environ 4,1~s et consomme 82 J net.
+Mais en regardant le gain apporté par le C++ pour calculer une seule image en 2048px, on remarque qu'on économise plus de 1128,7 J par rapport à Python (1576,8 J - 448,1 J).
 
-\section{Impact Environnemental et Étude de Cas}
+L'énergie dépensée pour compiler le code est ainsi \textbf{largement rentabilisée dès le premier calcul d'image}. L'investissement est donc toujours gagnant pour un programme destiné à être exécuté plusieurs fois (voir figure \ref{fig:compil}).
 
-\subsection{L'importance Géopolitique (Mix Électrique)}
-% Synthèse de la Q10.
-% Expliquer que le gCO2 / kWh varie dramatiquement. Que serait l'impact carbone des mêmes requêtes exécutées dans un pays au réseau très carboné par rapport à une exécution locale ? (Montrer une valeur estimée). 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\linewidth]{../average_estimate23.png}
+    \caption{Coût énergétique de la phase de compilation (C++).}
+    \label{fig:compil}
+\end{figure}
 
-\subsection{Perspectives Logicielles et Cas d'Étude (ENSEIRB)}
-% Synthèse des Q11 et Q12.
-% Q11 : Présenter d'autres leviers d'optimisation (précision des flottants simple vs double, GPU vs CPU, limitation de fréquence, etc.).
-% Q12 : Mise en application finale. Choisir un outil / code numérique utilisé dans la formation (ex: réseau de de neurones, calcul éléments finis...), estimer / calculer son empreinte environnementale et proposer des pistes de remédiation architecturale ou algorithmique.
+\section{Exploitation de l'architecture matérielle (CPU)}
+
+\subsection{Parallélisation (multi-cœur)}
+
+En activant le multi-threading avec OpenMP en C++, tous les cœurs du processeur sont utilisés. Cela fait logiquement grimper la puissance instantanée consommée. Dans les tests C++, la puissance moyenne monte à 96~W en mode parallèle au lieu de 26,5~W sur un seul cœur. L'avantage, c'est que le temps d'exécution s'effondre, on passe de 23,58~s à seulement 1,99~s.
+Au final, l'énergie totale utilisée n'est plus que de 177,11 J en parallèle, contre 448,13 J en séquentiel complet. Le temps gagné compense largement le pic de consommation temporaire, avec une baisse de presque $60\%$ de l'énergie totale par calcul (voir figure \ref{fig:cpp_omp}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\linewidth]{../average_estimate19.png}
+    \caption{Consommation de la version C++ multi-cœur (OpenMP).}
+    \label{fig:cpp_omp}
+\end{figure}
+
+\subsection{Optimisations sur un seul cœur : vectorisation et pipelining}
+
+Précédemment nous avons parallélisé sur tout le processeur, mais il est aussi possible de traiter plusieurs données à la fois directement au sein d'un même cœur grâce aux instructions vectorielles (AVX/FMA de SIMD). Appliquer ces calculs simultanés au code C++ sur un cœur fait passer le temps de 23,5~s à 4,08~s, l'énergie tombant à 81,6 J.
+En combinant cette structure avec le pipelining (une façon logicielle de chevaucher les calculs sans temps mort) ainsi que la parallélisation complète de tous les cœurs, on arrive à un temps très court de 0,233~s pour une dépense d'à peine 27,72 J (voir figure \ref{fig:cpp_opti}).
+
+\textbf{Le paradoxe de la vectorisation (bonus) :} 
+Lorsqu'un processeur calcule 4 pixels voisins en même temps dans un registre, il doit finir la tâche du pixel le plus lent avant de passer au bloc suivant. Il en résulte inévitablement quelques opérations mathématiques réalisées "dans le vide" sur les pixels plus rapides qui avaient déjà convergés, ce qui fait monter le nombre moyen d'itérations par pixel atteignant environ 1900 le nombre d'itérations moyen par pixel. Étonnamment, on y gagne toujours en énergie. En fait, cela permet d'éviter les nombreuses boucles conditionnelles (`if/else`) et le processeur ne gâche plus certains cycles à cause des erreurs de prédictions de saut, gardant ainsi le flux de calcul bien plus constant.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\linewidth]{../average_estimate22.png}
+    \caption{Consommation de la version C++ la plus optimisée (AVX, multi-threading, pipelining).}
+    \label{fig:cpp_opti}
+\end{figure}
+
+\section{Bilan global des stratégies d'optimisation}
+
+Parmi toutes les versions étudiées, la solution \textbf{C++ groupant l'AVX, l'OpenMP et le pipelining} (illustrée figure \ref{fig:cpp_opti}) est de très loin la plus économe en énergie, demandant seulement 27,7 J contre les 1576 J initiaux du script basique en Python.
+
+\textbf{Lien entre temps d'exécution et énergie :} Lors de tâches nécessitant beaucoup de calculs en boucle sans attente externe, le code le plus rapide a de grandes de chances d'être le plus économe. En effet, réduire le temps pris par une tâche permet d'éviter la consommation de base du processeur ($P_{\text{idle}}$) qui tourne continuellement en toile de fond. Réussir à finir le travail plus vite évite cette déperdition liée au temps. Les relevés de notre expérience montrent d'ailleurs clairement que plus un run est bref, tout du moins dans l'informatique intensive, plus il est économe.
+
+\textbf{Optimiser un cœur ou forcer sur le multi-cœur :} 
+Quand on observe nos résultats intermédiaires :
+\begin{itemize}
+    \item L'optimisation pointue (SIMD) concentrée sur \textbf{un seul cœur} : \textbf{81,6 J} et environ 4 s.
+    \item La parallélisation "à l'arrache" (OpenMP simple) du code basique sur l'entièreté du processeur : \textbf{177,11 J} et presque 2 s.
+\end{itemize}
+On peut en conclure qu'il est souvent plus efficace de réaliser un code de bonne qualité exploitant pleinement les capacités d'un cœur informatique. Démultiplier un code basique sur une multitude de cœurs coûte globalement plus cher et augmente la consommation brute de la puce.
+
+\section{Impact environnemental et étude de cas}
+
+\subsection{L'importance de la géographie (mix électrique)}
+
+Les rejets de CO2 d'un serveur effectuant du lourd calcul dépendent du pays dans lequel il est branché, car la propreté de l'électricité (en $ \text{gCO}_2\text{e} / \text{kWh} $) varie beaucoup. En France, le réseau électrique est alimenté en grande partie par le nucléaire et le renouvelable : on se trouve entre 50 et 60 g/kWh. Les calculs réalisés en salle de TP émettent à peine $0,00047$ $\text{gCO}_2\text{e}$ par exécution.
+
+En revanche, si on branchait les mêmes serveurs dans un pays utilisant davantage le charbon ou le gaz (comme par exemple en Allemagne ou dans certains états américains), l'intensité moyenne peut grimper jusqu'à $400$ ou $800$ g/kWh. Par conséquent, \textbf{l'impact carbone serait multiplié par 10} pour une énergie équivalente tirée par les composants. C'est pour ça que très bien optimiser un algorithme permet d'aider à amortir ce coût dans ces zones géographiques.
+
+\subsection{Perspectives logicielles et cas d'étude (sujets de l'IA)}
+
+Au-delà des approches que nous venons d'explorer, l'économie énergétique du numérique pourrait aussi passer par :
+\begin{itemize}
+    \item \textbf{La diminution des variables flottantes : } Dans beaucoup de calculs spatiaux, garder des variables lourdes en type \texttt{double} de 64 bits n'est pas forcément utile. En les passant en simple précision \texttt{float} de 32 bits, on libère de l'espace pour que le bus SIMD du processeur ramène deux fois plus d'opérations simultanément dans les registres.
+    \item \textbf{Bien cibler le processeur : } Déléguer les longues boucles matricielles directement vers la carte graphique (sur le GPU) est souvent beaucoup plus judicieux que d'épuiser le CPU.
+\end{itemize}
+
+\textbf{Mise en application (projet de modèles d'IA) :}
+Les réseaux de neurones sont sûrement l'un des postes de consommation courante qui demandent énormément de ressources dans notre formation. Par exemple, au cours d'un projet de création de modèle, quelques milliers de calculs vectoriels s'enchaînent parfois sur plusieurs dizaines d'heures.
+Pour que les modèles tournent sans ruiner la note d'électricité globale, nous pouvons cibler de bonnes pratiques simples en Python :
+\begin{enumerate}
+    \item Forcer un système d'arrêt anticipé dans l'algorithme "Early-stopping". Si la précision (l'accuracy) ne monte plus malgré plusieurs nouvelles époques gourmandes, c'est alors qu'il est temps d'interrompre cette quête chronophage.
+    \item Utiliser des méthodes de nettoyage de structure du modèle final (Pruning ou Quantization) pour qu'il soit bien moins lent à exécuter lors de ses prédictions et pour l'alléger au niveau poids de transfert une fois déployé.
+\end{enumerate}
 
 \section*{Conclusion}
-% Synthèse finale sur l'importance de la sobriété numérique dans le développement applicatif et sur la pertinence d'aligner la conception logicielle sur les contraintes matérielles.
+
+Ce TP sur le calcul de figures complexes nous a dévoilé de façon concrète les liens physiques qui attachent nos algorithmes au matériel. Nous avons prouvé qu'en comprenant la logique d'exécution des processeurs (par des modifications de vectorisation, l'utilisation de pipeline sur des codes C et du multi-threading), nous pouvons diviser remarquablement la consommation finale en courant de la machine. Un code économe n'offre pas simplement la perspective flatteuse d'une meilleure vitesse d'exécution pour l'application, il est d'abord au service concret de la retenue au quotidien dans le bilan énergétique de nos serveurs.
 
 \end{document}
->>>>>>> refs/remotes/origin/main
+
