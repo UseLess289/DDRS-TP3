@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+
+\title{Performance éngergétique du code}
+\author{Gabriel xxx, Samuel MICHEL-CHAGNOT}
+\date{17 Avril 2026}
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+\indent Dans la continuitée du travail fait dans le rapport précédent, on se propose ici d'étudier l'impact énergétique provoqué par les méthodes ou approches de codage.
+Nous allons donc procéder à l'éxecution d'un même algorithme en utilisant divers méthodes et approches : langage compilé à la volée(Python), langage compilés (C++).
+
+De la sorte, nous utiliserons le programme \texttt{s-tui} afin de faire des relevés énergétiques de l'éxecution, la compilation de code.
+Notre objet d'étude sera le calcul de l'ensemble de Mandelbrot.
+Enfin, le processeur utilisé est un Intel Xeon W1270 dont le fréquence d'horloge est de 3.40 GHz.
+
+\section{Langage compilé à la volée}
+Le sujet nous propose d'utiliser directement un script Python calculant une image représentant les fracatales de Mandelbrot.
+
+Pour le calcul de la quantitée de CO2e du programme, nous nous basons sur les présentes dans le site elecctricitymaps.com. Nous avons ainsi défini que $1 kWh$ représente $17gCO2e$.
+Enfin, pour chaque exécution, nous relevons constamment les données suivantes :
+\begin{itemize}
+	\item Durée d'éxecution (s)
+	\item Puissance active moyenne (W)
+	\item Puissance moyenne au repos (W)
+	\item Energie absorbée par  la tâche (mWh)
+	\item Quantité d'émission de CO2e (gCO2e)
+\end{itemize}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
